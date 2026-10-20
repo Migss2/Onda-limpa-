@@ -20,7 +20,7 @@ O projeto busca unir preservação ambiental, conscientização social e fortale
 -  Estabelecer parcerias com quiosques, mercados e outros comerciantes locais.
 -  Utilizar a tecnologia para facilitar o acesso aos pontos de coleta e às recompensas.
 
-## ⚙️ Como funciona?
+##  Como funciona?
 
 1. **Cadastro:** o usuário cria uma conta no aplicativo.
 2. **Localização:** o aplicativo apresenta um mapa com os pontos de coleta disponíveis.
@@ -94,7 +94,7 @@ Com a implementação do projeto, esperamos:
 - Promover uma relação mais responsável entre a sociedade e o meio ambiente.
 
 
-## 👥 Equipe
+##  Equipe
 
 Projeto desenvolvido por:
 
@@ -103,9 +103,9 @@ Projeto desenvolvido por:
 - Pedro Diniz
 - Matheus dos Santos
 
-## 🌊 Nossa proposta
+##  Nossa proposta
 
 Acreditamos que pequenas atitudes podem gerar grandes mudanças. Ao transformar a coleta de resíduos em uma ação acessível e recompensadora, queremos incentivar mais pessoas a cuidar das praias e preservar a vida marinha.
 
-**Onda Limpa: sua atitude transforma a maré.** ♻️
+**Onda Limpa: sua atitude transforma a maré.** 
 
