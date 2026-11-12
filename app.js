@@ -180,24 +180,10 @@ function pageHome(){
             <button class="btn btn-primary" onclick="navigate('login')">Entrar na minha conta</button>
             <button class="btn btn-ghost" onclick="navigate('how')">Como funciona</button>
           </div>
-          <div class="stat-mini-row" style="max-width:420px; margin-top:40px;">
+          <div class="stat-mini-row" style="max-width:420px; margin:40px auto 0;">
             <div class="card stat-mini"><div class="n">3</div><div class="l">Clientes ativos</div></div>
             <div class="card stat-mini"><div class="n">${fmtNum(DB.users.reduce((s,u)=>s+u.points,0))}</div><div class="l">Pontos em circulação</div></div>
             <div class="card stat-mini"><div class="n">${DB.rewards.length}</div><div class="l">Recompensas</div></div>
-          </div>
-        </div>
-        <div class="hero-visual">
-          <div class="hero-orbit spin-slow" style="animation-duration:40s;"></div>
-          <svg class="deco-sun float-slow" viewBox="0 0 64 64"><circle cx="32" cy="32" r="14" fill="#FFB703"/><g stroke="#FFB703" stroke-width="3" stroke-linecap="round">
-            <line x1="32" y1="2" x2="32" y2="12"/><line x1="32" y1="52" x2="32" y2="62"/><line x1="2" y1="32" x2="12" y2="32"/><line x1="52" y1="32" x2="62" y2="32"/>
-            <line x1="11" y1="11" x2="18" y2="18"/><line x1="46" y1="46" x2="53" y2="53"/><line x1="53" y1="11" x2="46" y2="18"/><line x1="18" y1="46" x2="11" y2="53"/>
-          </g></svg>
-          <svg class="deco-shell float-slow-2" viewBox="0 0 54 54"><path d="M27 4 C10 4 4 24 4 36 C4 46 14 50 27 50 C40 50 50 46 50 36 C50 24 44 4 27 4 Z" fill="#F6ECD6" stroke="#E9D6A8" stroke-width="2"/><path d="M27 10 L27 46 M17 16 L20 46 M37 16 L34 46" stroke="#E9D6A8" stroke-width="2" fill="none"/></svg>
-          <div class="hero-scan-card">
-            <span class="scan-pill"><span class="dot-live"></span> lendo QR code</span>
-            <div class="qr-fake" style="margin-top:14px;"></div>
-            <p style="font-weight:700; color:var(--ocean-deep); font-size:14px;">João Silva</p>
-            <p class="mono small">+250 pontos adicionados</p>
           </div>
         </div>
       </div>
@@ -406,18 +392,6 @@ function pageDashboard(){
         </div>
       </div>
     </div>
-
-    <div class="card qr-card">
-      <h3>Seu QR Code</h3>
-      <p class="small mt-8">Apresente no caixa para pontuar</p>
-      <div class="qr-box"><div id="qrcodeDash"></div></div>
-      <div class="qr-id">${u.qrCode}</div>
-      <div class="qr-actions">
-        <button class="btn btn-ghost btn-sm" onclick="navigate('account')">🔍 Ampliar</button>
-        <button class="btn btn-ghost btn-sm" onclick="downloadQR('qrcodeDash','${u.qrCode}')">⬇️ Baixar</button>
-        <button class="btn btn-ghost btn-sm" onclick="shareQR('${u.qrCode}')">📤 Compartilhar</button>
-      </div>
-    </div>
   </div>
 
   <div class="flex items-center justify-between" style="margin-top:34px;">
@@ -506,7 +480,7 @@ function pageAccount(){
   const u = session.user;
   return `
   <h1 class="page-title">Minha conta</h1>
-  <p class="page-sub">Seus dados e QR Code em detalhe.</p>
+  <p class="page-sub">Seus dados em detalhe.</p>
   <div class="dash-grid">
     <div class="card card-pad">
       <div class="flex items-center gap-10">
@@ -518,15 +492,6 @@ function pageAccount(){
         <div><p class="small">Cliente desde</p><p style="font-weight:700;">${new Date(u.createdAt).toLocaleDateString("pt-BR")}</p></div>
         <div><p class="small">Saldo atual</p><p class="mono" style="font-weight:700; color:var(--ocean);">${fmtNum(u.points)} pts</p></div>
         <div><p class="small">Código QR</p><p class="mono" style="font-weight:700;">${u.qrCode}</p></div>
-      </div>
-    </div>
-    <div class="card qr-card">
-      <h3>QR Code ampliado</h3>
-      <div class="qr-box"><div id="qrcodeAccount"></div></div>
-      <div class="qr-id">${u.qrCode}</div>
-      <div class="qr-actions">
-        <button class="btn btn-ghost btn-sm" onclick="downloadQR('qrcodeAccount','${u.qrCode}')">⬇️ Baixar</button>
-        <button class="btn btn-ghost btn-sm" onclick="shareQR('${u.qrCode}')">📤 Compartilhar</button>
       </div>
     </div>
   </div>
