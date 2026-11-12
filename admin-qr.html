@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="pt-BR"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Gerar QR Code de pontos · Maré</title>
+<link rel="stylesheet" href="style.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script></head>
+<body style="padding:24px;">
+<div class="card auth-card" style="margin:0 auto;">
+  <h2>🏪 Gerar QR Code de pontos</h2>
+  <p class="small mt-8">O QR gerado abre o seu site e soma os pontos na conta do cliente. Cada cliente só pode usar cada QR uma vez.</p>
+  <form id="f" class="mt-14">
+    <div class="field"><label for="key">Chave de administrador</label><input id="key" type="password" required></div>
+    <div class="field"><label for="base">Endereço do site (o que o celular consegue abrir)</label><input id="base" required>
+      <p class="field-hint" id="hint"></p></div>
+    <div class="field"><label for="pts">Pontos</label><input id="pts" type="number" min="1" value="50" required></div>
+    <div class="field"><label for="label">Descrição (aparece no histórico)</label><input id="label" placeholder="Compra #1024"></div>
+    <div class="field"><label for="max">Limite total de usos (opcional)</label><input id="max" type="number" min="1" placeholder="ilimitado"></div>
+    <button class="btn btn-primary btn-block" type="submit">Gerar QR</button>
+  </form>
+  <div id="out" class="text-center mt-14"></div>
+</div>
+<script>
+const base = document.getElementById("base"), hint = document.getElementById("hint");
+base.value = location.origin;
+if (/^(localhost|127\.0\.0\.1)$/.test(location.hostname))
+  hint.textContent = "⚠️ \"localhost\" só funciona neste computador. Troque pelo IP do computador (ex.: http://192.168.0.15:3000) para o celular abrir.";
+
+document.getElementById("f").onsubmit = async ev => {
+  ev.preventDefault();
+  const out = document.getElementById("out");
+  const r = await fetch("/api/admin/codes", { method: "POST",
+    headers: { "Content-Type": "application/json", "x-admin-key": document.getElementById("key").value },
+    body: JSON.stringify({ points: document.getElementById("pts").value, label: document.getElementById("label").value, maxUses: document.getElementById("max").value || null }) });
+  const d = await r.json();
+  if (!r.ok) { out.textContent = "❌ " + d.error; return; }
+  const link = base.value.replace(/\/+$/, "") + "/?c=" + d.code;   // o endereço que o QR carrega
+  out.innerHTML = '<div id="qr" style="display:inline-block;padding:12px;background:#fff;border-radius:12px;"></div>'
+    + '<p class="mono mt-8" style="word-break:break-all;font-size:12px;"></p>'
+    + '<p class="small">+' + d.points + ' pontos</p><button class="btn btn-ghost btn-sm" onclick="window.print()">🖨️ Imprimir</button>';
+  out.querySelector("p.mono").textContent = link;
+  new QRCode(document.getElementById("qr"), { text: link, width: 220, height: 220, colorDark: "#073B4C", colorLight: "#ffffff", correctLevel: QRCode.CorrectLevel.M });
+};
+</script></body></html>
