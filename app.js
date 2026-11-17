@@ -1,31 +1,14 @@
-
 let DB = {
-  users: [
-    { id: "102938", name: "João Silva",     email: "joao@exemplo.com",   password: "123456", qrCode: "CLIENTE-102938", points: 2450, createdAt: "2025-11-02" },
-    { id: "204471", name: "Maria Santos",   email: "maria@exemplo.com",  password: "123456", qrCode: "CLIENTE-204471", points: 5200, createdAt: "2025-08-14" },
-    { id: "309215", name: "Lucas Oliveira", email: "lucas@exemplo.com",  password: "123456", qrCode: "CLIENTE-309215", points: 850,  createdAt: "2026-01-20" },
-  ],
-  transactions: [
-    { id: "t1", userId: "102938", type: "compra",   points: 250,  description: "Compra #1024", createdAt: "2026-08-02T10:15:00", balanceAfter: 1900 },
-    { id: "t2", userId: "102938", type: "compra",   points: 100,  description: "Compra #1028", createdAt: "2026-08-09T16:40:00", balanceAfter: 2000 },
-    { id: "t3", userId: "102938", type: "resgate",  points: -500, description: "Resgate: Recompensa Premium", createdAt: "2026-08-15T12:05:00", balanceAfter: 1500 },
-    { id: "t4", userId: "102938", type: "compra",   points: 300,  description: "Compra #1042", createdAt: "2026-08-20T09:30:00", balanceAfter: 1800 },
-    { id: "t5", userId: "102938", type: "compra",   points: 650,  description: "Compra #1050", createdAt: "2026-08-24T18:20:00", balanceAfter: 2450 },
-    { id: "t6", userId: "204471", type: "compra",   points: 1200, description: "Compra #0998", createdAt: "2026-08-11T14:00:00", balanceAfter: 5200 },
-    { id: "t7", userId: "309215", type: "compra",   points: 850,  description: "Compra #1061", createdAt: "2026-08-23T11:00:00", balanceAfter: 850 },
-  ],
+  users: [],
+  transactions: [],
   rewards: [
     { id: "r1", name: "Desconto de R$10",     description: "Vale-desconto para usar em qualquer compra na loja.", pointsRequired: 500,  image: "🏖️", stock: 40, active: true },
     { id: "r2", name: "Produto especial",     description: "Item exclusivo da coleção verão do clube Maré.",       pointsRequired: 1000, image: "🌊", stock: 18, active: true },
     { id: "r3", name: "Desconto de R$25",     description: "Vale-desconto de maior valor para grandes compras.",   pointsRequired: 2000, image: "☀️", stock: 25, active: true },
     { id: "r4", name: "Recompensa Premium",   description: "Kit premium da loja — edição limitada de verão.",      pointsRequired: 5000, image: "🏄", stock: 6,  active: true },
   ],
-  redemptions: [
-    { id: "d1", userId: "102938", rewardId: "r4", points: 500, createdAt: "2026-08-15T12:05:00", status: "concluído" },
-  ],
-  admins: [
-    { id: "a1", name: "Ana Marés", email: "admin@mare.com", password: "admin123", role: "Administrador" },
-  ],
+  redemptions: [],
+  admins: [],
 };
 
 let nextTxId = DB.transactions.length + 1;
@@ -35,6 +18,7 @@ let nextRedId = DB.redemptions.length + 1;
    SESSION STATE
    --------------------------------------------------------------- */
 let session = { user: null, admin: null };
+let siteStats = null;   // números reais da página inicial (preenchido pelo backend.js)
 let route = "home";
 let scannerState = { stream: null, rafId: null, foundUser: null };
 
@@ -100,6 +84,17 @@ function navigate(r, params){
 function requireClient(){ if(!session.user){ navigate("login"); return false; } return true; }
 function requireAdmin(){ if(!session.admin){ navigate("admin-login"); return false; } return true; }
 
+/* menu do celular (botão ☰) */
+function toggleMobileMenu(force){
+  const links = document.getElementById("publicNavLinks"), btn = document.getElementById("navToggle");
+  if (!links || !btn) return;
+  const open = force !== undefined ? force : !links.classList.contains("open");
+  links.classList.toggle("open", open);
+  btn.setAttribute("aria-expanded", String(open));
+  btn.setAttribute("aria-label", open ? "Fechar menu" : "Abrir menu");
+}
+document.addEventListener("click", e => { if (!e.target.closest(".topnav-inner")) toggleMobileMenu(false); });
+
 function renderNav(){
   const links = document.getElementById("publicNavLinks");
   const actions = document.getElementById("navActions");
@@ -107,6 +102,8 @@ function renderNav(){
   const inClientApp = ["dashboard","history","rewards-app","account"].includes(route) && session.user;
 
   links.style.display = (inAdmin) ? "none" : "";
+  document.getElementById("navToggle").style.display = inAdmin ? "none" : "";
+  toggleMobileMenu(false);   // fecha o menu do celular a cada troca de página
   document.querySelectorAll("#publicNavLinks a").forEach(a=>{
     a.classList.toggle("active", a.dataset.route===route);
   });
@@ -183,9 +180,9 @@ function pageHome(){
             <button class="btn btn-ghost" onclick="navigate('rewards-public')">Loja de pontos</button>
           </div>
           <div class="stat-mini-row" style="max-width:420px; margin:40px auto 0;">
-            <div class="card stat-mini"><div class="n">3</div><div class="l">Clientes ativos</div></div>
-            <div class="card stat-mini"><div class="n">${fmtNum(DB.users.reduce((s,u)=>s+u.points,0))}</div><div class="l">Pontos em circulação</div></div>
-            <div class="card stat-mini"><div class="n">${DB.rewards.length}</div><div class="l">Recompensas</div></div>
+            <div class="card stat-mini"><div class="n">${fmtNum(siteStats ? siteStats.clients : 0)}</div><div class="l">Clientes cadastrados</div></div>
+            <div class="card stat-mini"><div class="n">${fmtNum(siteStats ? siteStats.points : 0)}</div><div class="l">Pontos em circulação</div></div>
+            <div class="card stat-mini"><div class="n">${fmtNum(siteStats ? siteStats.rewards : DB.rewards.length)}</div><div class="l">Recompensas</div></div>
           </div>
         </div>
       </div>
@@ -316,7 +313,7 @@ function pageAdminLogin(){
       <form onsubmit="return doAdminLogin(event)">
         <div class="field">
           <label for="adminEmail">E-mail</label>
-          <input id="adminEmail" type="email" placeholder="admin@mare.com" required>
+          <input id="adminEmail" type="email" placeholder="e-mail" required>
         </div>
         <div class="field">
           <label for="adminPass">Senha</label>
@@ -324,12 +321,12 @@ function pageAdminLogin(){
         </div>
         <button class="btn btn-primary btn-block" type="submit">Entrar no painel</button>
       </form>
-      <p class="small mt-14 text-center">Demo: <span class="mono">admin@mare.com</span> · senha <span class="mono">admin123</span></p>
+      <p class="small mt-14 text-center">Acesso restrito ao lojista.</p>
       <button class="demo-chip" style="display:block; margin:10px auto 0;" onclick="fillAdminLogin()">Preencher automaticamente</button>
     </div>
   </div>`;
 }
-function fillAdminLogin(){ document.getElementById("adminEmail").value="admin@mare.com"; document.getElementById("adminPass").value="admin123"; }
+function fillAdminLogin(){}
 function doAdminLogin(ev){
   ev.preventDefault();
   const email = document.getElementById("adminEmail").value.trim().toLowerCase();
@@ -736,9 +733,6 @@ function pageAdminScan(){
       <div class="flex gap-10 mt-8">
         <input id="manualId" placeholder="CLIENTE-102938" style="flex:1; padding:12px 14px; border-radius:12px; border:1.5px solid var(--line);">
         <button class="btn btn-primary" onclick="lookupManual()">Buscar</button>
-      </div>
-      <div class="text-center mt-8">
-        ${DB.users.map(u=>`<button class="demo-chip" onclick="lookupCode('${u.qrCode}')">${escapeHtml(u.name.split(" ")[0])}</button>`).join("")}
       </div>
     </div>
 

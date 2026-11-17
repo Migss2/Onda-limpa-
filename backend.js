@@ -20,6 +20,13 @@ userTx = () => myTx;
 /* ---------- login e cadastro ---------- */
 let authMode = "login";
 function setAuthMode(m){ authMode = m; render(); }
+// toda vez que alguém abre a tela de login (menu, botões, QR), ela começa em "Entrar", e não em "Criar conta"
+const _navigate = navigate;
+navigate = function(r, params){
+  if (r === "login") authMode = "login";
+  if (r === "home" || r === "rewards-public") refreshStats();   // números sempre atualizados
+  return _navigate(r, params);
+};
 pageLogin = function(){
   const reg = authMode === "register";
   return `
@@ -64,7 +71,11 @@ logoutClient = async function(){
 };
 
 /* resgate de recompensas agora passa pelo servidor */
-api.redeemReward = async (userId, rewardId) => { applyMe(await http("POST","/api/redeem",{ rewardId })); };
+/* resgate: cliente resgata para si; lojista resgata para o cliente escolhido */
+api.redeemReward = async (userId, rewardId) => {
+  if (session.admin && route.startsWith("admin")){ await http("POST","/api/admin/redeem",{ userId, rewardId }); await loadAdminData(); }
+  else applyMe(await http("POST","/api/redeem",{ rewardId }));
+};
 
 /* ---------- página "Escanear QR Code" (cliente) ---------- */
 const _render = render;
@@ -173,3 +184,54 @@ function addPasswordToggles(){
 }
 new MutationObserver(addPasswordToggles).observe(document.getElementById("app"), { childList: true, subtree: true });
 addPasswordToggles();
+
+/* ---------- números reais da página inicial e catálogo da loja ---------- */
+function refreshStats(){
+  http("GET","/api/stats").then(d => {
+    const mudou = JSON.stringify(d) !== JSON.stringify(siteStats);
+    siteStats = d;
+    if (!session.admin) DB.rewards = d.rewardsList;
+    if (mudou && ["home","rewards-public"].includes(route)) render();
+  }).catch(()=>{});
+}
+refreshStats();
+
+/* ---------- painel do lojista: login pela chave e dados reais do banco ---------- */
+pageAdminLogin = function(){
+  return `
+  <div class="auth-wrap"><div class="card auth-card">
+    <div class="text-center" style="margin-bottom:18px;">
+      <span style="font-size:34px;">🔐</span>
+      <h2 style="margin-top:8px;">Painel do lojista</h2>
+      <p class="small mt-8">Digite a chave de administrador definida no servidor.</p>
+    </div>
+    <form onsubmit="return doAdminLogin(event)">
+      <div class="field"><label for="adminKey">Chave de administrador</label><input id="adminKey" type="password" required></div>
+      <button class="btn btn-primary btn-block" type="submit">Entrar no painel</button>
+    </form>
+  </div></div>`;
+};
+async function loadAdminData(){
+  const d = await http("GET","/api/admin/data");
+  DB.users = d.users; DB.transactions = d.transactions; DB.rewards = d.rewards; DB.redemptions = d.redemptions;
+}
+doAdminLogin = async function(ev){
+  ev.preventDefault();
+  try{
+    await http("POST","/api/admin/login",{ key: document.getElementById("adminKey").value });
+    await loadAdminData();
+    session.admin = { name: "Administrador" };
+    toast("☀️ Painel liberado");
+    navigate("admin-dashboard");
+  }catch(e){ toast("❌ "+e.message); }
+  return false;
+};
+logoutAdmin = async function(){
+  await http("POST","/api/admin/logout").catch(()=>{});
+  session.admin = null;
+  if (session.user){ try{ applyMe(await http("GET","/api/me")); }catch{} }
+  else { DB.users = []; DB.transactions = []; DB.redemptions = []; }
+  navigate("admin-login");
+};
+api.addPoints = async (userId, points, description) => { await http("POST","/api/admin/adjust",{ userId, points, description }); await loadAdminData(); };
+api.removePoints = async (userId, points, description) => { await http("POST","/api/admin/adjust",{ userId, points: -points, description }); await loadAdminData(); };

@@ -1,4 +1,3 @@
-
 :root{
   --ocean-deep:#073B4C;
   --ocean:#0A5A78;
@@ -340,3 +339,19 @@ tbody tr:hover{background:rgba(0,180,216,0.04);}
 .public-page{min-height:calc(100vh - 92px); display:flex; flex-direction:column;}
 .public-page footer{margin-top:auto;}
 .section-page{padding-top:40px;}
+
+/* menu do celular: botão ☰ e lista que abre embaixo da barra */
+.nav-toggle{flex-direction:column; align-items:center; justify-content:center; gap:4px; width:40px; height:40px; flex-shrink:0; cursor:pointer; border-radius:12px;}
+.nav-toggle span{display:block; width:20px; height:2px; border-radius:2px; background:var(--ocean-deep); transition:transform .2s, opacity .2s;}
+.nav-toggle[aria-expanded="true"] span:nth-child(1){transform:translateY(6px) rotate(45deg);}
+.nav-toggle[aria-expanded="true"] span:nth-child(2){opacity:0;}
+.nav-toggle[aria-expanded="true"] span:nth-child(3){transform:translateY(-6px) rotate(-45deg);}
+@media (max-width:860px){
+  .topnav-inner{position:relative; gap:10px;}
+  .nav-actions{margin-left:auto;}
+  .nav-links.open{display:flex; flex-direction:column; align-items:stretch; gap:2px; position:absolute; top:calc(100% + 8px); left:0; right:0; padding:10px; border-radius:22px; background:rgba(255,255,255,0.97); border:1px solid rgba(255,255,255,0.6); box-shadow:var(--shadow-soft);}
+  .nav-links.open a{display:block; padding:12px 16px;}
+}
+@media (max-width:560px){
+  .nav-actions .btn-ghost{display:none;}
+}
