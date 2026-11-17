@@ -133,9 +133,9 @@ function render(){
 
   switch(route){
     case "home": app.innerHTML = pageHome(); break;
-    case "how": app.innerHTML = pageHome(true); afterHome(); return;
+    case "how": app.innerHTML = pageHow(); break;
     case "rewards-public": app.innerHTML = pageRewardsPublic(); break;
-    case "login": app.innerHTML = pageLogin(); break;
+    case "login": if (session.user){ navigate("dashboard"); return; } app.innerHTML = pageLogin(); break;
     case "admin-login": app.innerHTML = pageAdminLogin(); break;
 
     case "dashboard": if(!requireClient())return; app.innerHTML = shellClient(pageDashboard()); break;
@@ -169,6 +169,7 @@ function waveSVG(fill, opacity){
 
 function pageHome(){
   return `
+  <div class="public-page">
   <section class="hero">
     <div class="container">
       <div class="hero-grid">
@@ -177,8 +178,9 @@ function pageHome(){
           <h1>Transforme suas compras em <span class="accent">recompensas</span>.</h1>
           <p class="lead">Acumule pontos, desbloqueie benefícios e aproveite cada momento — como um dia perfeito de praia.</p>
           <div class="hero-ctas">
-            <button class="btn btn-primary" onclick="navigate('login')">Entrar na minha conta</button>
-            <button class="btn btn-ghost" onclick="navigate('how')">Como funciona</button>
+            ${session.user ? "" : `<button class="btn btn-primary" onclick="navigate('login')">Entrar na minha conta</button>`}
+            <button class="btn ${session.user ? "btn-primary" : "btn-ghost"}" onclick="navigate('how')">Como funciona</button>
+            <button class="btn btn-ghost" onclick="navigate('rewards-public')">Loja de pontos</button>
           </div>
           <div class="stat-mini-row" style="max-width:420px; margin:40px auto 0;">
             <div class="card stat-mini"><div class="n">3</div><div class="l">Clientes ativos</div></div>
@@ -191,45 +193,13 @@ function pageHome(){
     <div class="wave-wrap mt-30">${waveSVG("#F6ECD6",1)}</div>
   </section>
 
-  <section style="background:var(--sand); padding-top:0;" id="how">
-    <div class="container">
-      <div class="section-head">
-        <span class="eyebrow">🌴 Simples como um dia de verão</span>
-        <h2 style="margin-top:14px;">Como o Maré funciona</h2>
-        <p>Quatro passos entre a sua compra e sua próxima recompensa.</p>
-      </div>
-      <div class="steps-row">
-        <div class="card step-card"><div class="step-num">01</div><div class="step-icon">🛍️</div><h3>Compre</h3><p>Faça uma compra na loja, do jeito que você já faz.</p></div>
-        <div class="card step-card"><div class="step-num">02</div><div class="step-icon">📱</div><h3>Escaneie</h3><p>Apresente seu QR Code exclusivo no caixa.</p></div>
-        <div class="card step-card"><div class="step-num">03</div><div class="step-icon">🌊</div><h3>Acumule</h3><p>Os pontos entram na sua conta automaticamente.</p></div>
-        <div class="card step-card"><div class="step-num">04</div><div class="step-icon">🎁</div><h3>Resgate</h3><p>Troque pontos por produtos, descontos e benefícios.</p></div>
-      </div>
-      <div class="tide-line mt-30">${waveSVG("#00B4D8",0.18)}</div>
-    </div>
-  </section>
+  ${footerHTML()}
+  </div>
+  `;
+}
 
-  <section>
-    <div class="container">
-      <div class="section-head">
-        <span class="eyebrow">🏄 Loja de recompensas</span>
-        <h2 style="margin-top:14px;">Vale a pena acumular</h2>
-        <p>Um preview do que você pode resgatar com seus pontos.</p>
-      </div>
-      <div class="rewards-grid">
-        ${DB.rewards.map(r=>`
-          <div class="card reward-card">
-            <div class="reward-img">${r.image}</div>
-            <div class="reward-title">${escapeHtml(r.name)}</div>
-            <div class="reward-desc">${escapeHtml(r.description)}</div>
-            <span class="reward-pts-badge mono">⚡ ${fmtNum(r.pointsRequired)} pts</span>
-          </div>`).join("")}
-      </div>
-      <div class="text-center mt-30">
-        <button class="btn btn-sun" onclick="navigate('login')">Quero começar a pontuar</button>
-      </div>
-    </div>
-  </section>
-
+function footerHTML(){
+  return `
   <footer>
     <div class="container">
       <div class="footer-inner">
@@ -240,16 +210,42 @@ function pageHome(){
   </footer>
   `;
 }
-function afterHome(){ document.getElementById("app").innerHTML = pageHome(); renderNav(); setTimeout(()=>document.getElementById("how")?.scrollIntoView({behavior:"smooth"}), 50); }
 
-function pageRewardsPublic(){
+function pageHow(){
   return `
-  <section style="padding-top:40px;">
+  <div class="public-page">
+  <section class="section-page">
     <div class="container">
       <div class="section-head">
-        <span class="eyebrow">🏝️ Loja de Recompensas</span>
+        <span class="eyebrow">🌴 Simples como um dia de verão</span>
+        <h2 style="margin-top:14px;">Como o Maré funciona</h2>
+        <p>Quatro passos entre a sua compra e sua próxima recompensa.</p>
+      </div>
+      <div class="steps-row">
+        <div class="card step-card"><div class="step-num">01</div><div class="step-icon">🛍️</div><h3>Compre</h3><p>Faça uma compra na loja, do jeito que você já faz.</p></div>
+        <div class="card step-card"><div class="step-num">02</div><div class="step-icon">📱</div><h3>Escaneie</h3><p>Aponte a câmera do celular para o QR Code da loja.</p></div>
+        <div class="card step-card"><div class="step-num">03</div><div class="step-icon">🌊</div><h3>Acumule</h3><p>Os pontos entram na sua conta automaticamente.</p></div>
+        <div class="card step-card"><div class="step-num">04</div><div class="step-icon">🎁</div><h3>Resgate</h3><p>Troque pontos por produtos, descontos e benefícios.</p></div>
+      </div>
+      <div class="tide-line mt-30">${waveSVG("#00B4D8",0.18)}</div>
+      ${session.user ? "" : `<div class="text-center mt-30"><button class="btn btn-sun" onclick="navigate('login')">Quero começar a pontuar</button></div>`}
+    </div>
+  </section>
+  ${footerHTML()}
+  </div>`;
+}
+
+
+function pageRewardsPublic(){
+  const logged = !!session.user;
+  return `
+  <div class="public-page">
+  <section class="section-page">
+    <div class="container">
+      <div class="section-head">
+        <span class="eyebrow">🏝️ Loja de pontos</span>
         <h2 style="margin-top:14px;">Troque pontos por experiências</h2>
-        <p>Entre na sua conta para resgatar. Aqui está uma prévia do catálogo.</p>
+        <p>${logged ? "Confira o catálogo de recompensas disponíveis." : "Entre na sua conta para resgatar. Aqui está uma prévia do catálogo."}</p>
       </div>
       <div class="rewards-grid">
         ${DB.rewards.map(r=>`
@@ -258,11 +254,14 @@ function pageRewardsPublic(){
             <div class="reward-title">${escapeHtml(r.name)}</div>
             <div class="reward-desc">${escapeHtml(r.description)}</div>
             <span class="reward-pts-badge mono">⚡ ${fmtNum(r.pointsRequired)} pts</span>
-            <button class="btn btn-ghost btn-sm btn-block mt-8" onclick="navigate('login')">Entrar para resgatar</button>
+            ${logged ? "" : `<button class="btn btn-ghost btn-sm btn-block mt-8" onclick="navigate('login')">Entrar para resgatar</button>`}
           </div>`).join("")}
       </div>
+      ${logged ? `<div class="text-center mt-30"><button class="btn btn-primary" onclick="navigate('rewards-app')">Resgatar no meu painel</button></div>` : ""}
     </div>
-  </section>`;
+  </section>
+  ${footerHTML()}
+  </div>`;
 }
 
 function pageLogin(){

@@ -17,7 +17,7 @@ function applyMe(d){
 }
 userTx = () => myTx;
 
-
+/* ---------- login e cadastro ---------- */
 let authMode = "login";
 function setAuthMode(m){ authMode = m; render(); }
 pageLogin = function(){
@@ -27,7 +27,7 @@ pageLogin = function(){
     <div class="text-center mt-8" style="margin-bottom:18px;">
       <span style="font-size:34px;">🐚</span>
       <h2 style="margin-top:8px;">${reg ? "Criar conta no Maré" : "Entrar no Maré"}</h2>
-      <p class="small mt-8">${reg ? "Comece com 0 pontos e ganhe escaneando QR Codes." : "Acesse seus pontos e seu QR Code exclusivo."}</p>
+      <p class="small mt-8">${reg ? "Comece com 0 pontos e ganhe escaneando QR Codes." : "Acesse seus pontos e suas recompensas."}</p>
     </div>
     <form onsubmit="return ${reg ? "doRegister" : "doLogin"}(event)">
       ${reg ? `<div class="field"><label for="regName">Nome</label><input id="regName" placeholder="Seu nome" required></div>` : ""}
@@ -44,7 +44,7 @@ async function doLogin(ev){
   try{
     applyMe(await http("POST","/api/login",{ email:document.getElementById("authEmail").value, password:document.getElementById("authPass").value }));
     toast(`🌊 Bem-vindo(a) de volta, ${escapeHtml(session.user.name.split(" ")[0])}!`);
-    navigate("dashboard");
+    navigate("dashboard"); await claimPendingCode();
   }catch(e){ toast("❌ "+e.message); }
   return false;
 }
@@ -53,7 +53,7 @@ async function doRegister(ev){
   try{
     applyMe(await http("POST","/api/register",{ name:document.getElementById("regName").value, email:document.getElementById("authEmail").value, password:document.getElementById("authPass").value }));
     toast("🎉 Conta criada! Você começa com 0 pontos.");
-    navigate("dashboard");
+    navigate("dashboard"); await claimPendingCode();
   }catch(e){ toast("❌ "+e.message); }
   return false;
 }
@@ -63,10 +63,10 @@ logoutClient = async function(){
   navigate("home");
 };
 
-
+/* resgate de recompensas agora passa pelo servidor */
 api.redeemReward = async (userId, rewardId) => { applyMe(await http("POST","/api/redeem",{ rewardId })); };
 
-
+/* ---------- página "Escanear QR Code" (cliente) ---------- */
 const _render = render;
 render = function(){
   if (route === "scan"){
@@ -131,5 +131,45 @@ async function redeemCode(code){
   }catch(e){ toast("❌ "+e.message); }
 }
 
+/* mantém o login ao recarregar a página */
 
-http("GET","/api/me").then(d=>{ applyMe(d); render(); }).catch(()=>{});
+/* ---------- QR Code como link: o celular abre o site com ?c=CODIGO ---------- */
+const urlCode = new URLSearchParams(location.search).get("c");
+if (urlCode){
+  sessionStorage.setItem("pendingCode", urlCode);
+  history.replaceState(null, "", location.pathname);   // limpa o código da barra de endereço
+}
+async function claimPendingCode(){
+  const code = sessionStorage.getItem("pendingCode");
+  if (!code || !session.user) return;
+  sessionStorage.removeItem("pendingCode");
+  await redeemCode(code);   // o servidor soma os pontos (ou avisa se o QR é inválido/já usado)
+  render();
+}
+
+/* mantém o login ao recarregar; se veio de um QR e não está logado, manda para o login */
+http("GET","/api/me")
+  .then(async d => { applyMe(d); render(); await claimPendingCode(); })
+  .catch(() => {
+    if (sessionStorage.getItem("pendingCode")){
+      toast("🔑 Entre ou crie sua conta para receber seus pontos");
+      navigate("login");
+    }
+  });
+
+/* ---------- caixinha "Mostrar senha" em todo campo de senha ---------- */
+function addPasswordToggles(){
+  document.querySelectorAll('input[type="password"]:not([data-toggle])').forEach(input => {
+    input.dataset.toggle = "1";
+    const label = document.createElement("label");
+    label.style.cssText = "display:flex;align-items:center;gap:8px;margin:8px 0 0;font-size:13px;font-weight:600;cursor:pointer;";
+    const box = document.createElement("input");
+    box.type = "checkbox";
+    box.style.cssText = "width:18px;height:18px;padding:0;margin:0;";
+    box.onchange = () => { input.type = box.checked ? "text" : "password"; };
+    label.append(box, "Mostrar senha");
+    input.insertAdjacentElement("afterend", label);
+  });
+}
+new MutationObserver(addPasswordToggles).observe(document.getElementById("app"), { childList: true, subtree: true });
+addPasswordToggles();
